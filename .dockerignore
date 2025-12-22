@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build outputs
+.next
+out
+build
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# Generated files (will be regenerated in Docker)
+src/generated
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+
+# Misc
+*.md
+!README.md
+LICENSE
+.DS_Store
