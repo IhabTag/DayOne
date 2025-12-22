@@ -1,4 +1,5 @@
 # SaaS Starter Kit
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/9688754c-a77f-4b02-a507-6275fc58791a" />
 
 A production-ready SaaS web application starter built with Next.js 15, featuring secure authentication, role-based access control, subscription management with reverse trial, and a comprehensive admin dashboard.
 
