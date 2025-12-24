@@ -1,9 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Alert } from '@/components/ui';
+import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Alert, Select, GoogleButton } from '@/components/ui';
+
+const REFERRAL_SOURCE_OPTIONS = [
+    { value: 'linkedin', label: 'LinkedIn' },
+    { value: 'facebook', label: 'Facebook' },
+    { value: 'twitter', label: 'Twitter/X' },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'google', label: 'Google' },
+    { value: 'friend', label: 'Friend Recommendation' },
+    { value: 'other', label: 'Other' },
+];
+
+const JOB_FUNCTION_OPTIONS = [
+    { value: 'product_management', label: 'Product Management' },
+    { value: 'software_engineering', label: 'Software Engineering' },
+    { value: 'ai_engineering', label: 'AI Engineering' },
+    { value: 'executive', label: 'Executive' },
+    { value: 'other', label: 'Other' },
+];
 
 export default function SignupPage() {
     const router = useRouter();
@@ -13,15 +31,43 @@ export default function SignupPage() {
         email: '',
         password: '',
         confirmPassword: '',
+        referralSource: '',
+        referralSourceOther: '',
+        jobFunction: '',
+        jobFunctionOther: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [googleOAuthEnabled, setGoogleOAuthEnabled] = useState(false);
+
+    // Fetch auth configuration on mount
+    useEffect(() => {
+        fetch('/api/auth/config')
+            .then(res => res.json())
+            .then(data => {
+                setGoogleOAuthEnabled(data.googleOAuthEnabled);
+            })
+            .catch(() => {
+                // Silently fail - Google OAuth just won't be shown
+            });
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData((prev) => ({
             ...prev,
             [e.target.name]: e.target.value,
+        }));
+    };
+
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+            // Clear the "Other" field if a non-other option is selected
+            ...(name === 'referralSource' && value !== 'other' ? { referralSourceOther: '' } : {}),
+            ...(name === 'jobFunction' && value !== 'other' ? { jobFunctionOther: '' } : {}),
         }));
     };
 
@@ -43,6 +89,30 @@ export default function SignupPage() {
             return;
         }
 
+        if (!formData.referralSource) {
+            setError('Please tell us where you heard about us');
+            setLoading(false);
+            return;
+        }
+
+        if (formData.referralSource === 'other' && !formData.referralSourceOther.trim()) {
+            setError('Please specify where you heard about us');
+            setLoading(false);
+            return;
+        }
+
+        if (!formData.jobFunction) {
+            setError('Please select your job function');
+            setLoading(false);
+            return;
+        }
+
+        if (formData.jobFunction === 'other' && !formData.jobFunctionOther.trim()) {
+            setError('Please specify your job function');
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
@@ -51,6 +121,10 @@ export default function SignupPage() {
                     name: formData.name,
                     email: formData.email,
                     password: formData.password,
+                    referralSource: formData.referralSource,
+                    referralSourceOther: formData.referralSource === 'other' ? formData.referralSourceOther : undefined,
+                    jobFunction: formData.jobFunction,
+                    jobFunctionOther: formData.jobFunction === 'other' ? formData.jobFunctionOther : undefined,
                 }),
             });
 
@@ -105,6 +179,17 @@ export default function SignupPage() {
                         {error}
                     </Alert>
                 )}
+
+                {/* Google OAuth Button - only shown when enabled */}
+                {googleOAuthEnabled && (
+                    <>
+                        <GoogleButton disabled={loading} />
+                        <div className="auth-divider">
+                            <span>or sign up with email</span>
+                        </div>
+                    </>
+                )}
+
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">
                         <label htmlFor="name" className="form-label">
@@ -171,6 +256,70 @@ export default function SignupPage() {
                             disabled={loading}
                         />
                     </div>
+                    <div className="form-group">
+                        <label htmlFor="referralSource" className="form-label">
+                            Where did you hear about us?
+                        </label>
+                        <Select
+                            id="referralSource"
+                            name="referralSource"
+                            value={formData.referralSource}
+                            onChange={handleSelectChange}
+                            options={REFERRAL_SOURCE_OPTIONS}
+                            placeholder="Select an option"
+                            required
+                            disabled={loading}
+                        />
+                    </div>
+                    {formData.referralSource === 'other' && (
+                        <div className="form-group">
+                            <label htmlFor="referralSourceOther" className="form-label">
+                                Please specify
+                            </label>
+                            <Input
+                                id="referralSourceOther"
+                                name="referralSourceOther"
+                                type="text"
+                                value={formData.referralSourceOther}
+                                onChange={handleChange}
+                                placeholder="Where did you hear about us?"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
+                    )}
+                    <div className="form-group">
+                        <label htmlFor="jobFunction" className="form-label">
+                            What is your job function?
+                        </label>
+                        <Select
+                            id="jobFunction"
+                            name="jobFunction"
+                            value={formData.jobFunction}
+                            onChange={handleSelectChange}
+                            options={JOB_FUNCTION_OPTIONS}
+                            placeholder="Select your role"
+                            required
+                            disabled={loading}
+                        />
+                    </div>
+                    {formData.jobFunction === 'other' && (
+                        <div className="form-group">
+                            <label htmlFor="jobFunctionOther" className="form-label">
+                                Please specify
+                            </label>
+                            <Input
+                                id="jobFunctionOther"
+                                name="jobFunctionOther"
+                                type="text"
+                                value={formData.jobFunctionOther}
+                                onChange={handleChange}
+                                placeholder="Your job function"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
+                    )}
                     <Button
                         type="submit"
                         variant="primary"
@@ -203,3 +352,4 @@ export default function SignupPage() {
         </Card>
     );
 }
+

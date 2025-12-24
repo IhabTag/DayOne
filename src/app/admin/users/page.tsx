@@ -13,6 +13,7 @@ interface User {
     plan: 'BASIC' | 'PRO';
     emailVerified: string | null;
     createdAt: string;
+    authProviders: string[];
 }
 
 interface UsersResponse {
@@ -31,6 +32,7 @@ export default function AdminUsersPage() {
     const [roleFilter, setRoleFilter] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [planFilter, setPlanFilter] = useState<string>('');
+    const [providerFilter, setProviderFilter] = useState<string>('');
     const limit = 10;
 
     const fetchUsers = useCallback(async () => {
@@ -44,6 +46,7 @@ export default function AdminUsersPage() {
             if (roleFilter) params.set('role', roleFilter);
             if (statusFilter) params.set('status', statusFilter);
             if (planFilter) params.set('plan', planFilter);
+            if (providerFilter) params.set('provider', providerFilter);
 
             const response = await fetch(`/api/admin/users?${params}`);
             if (response.ok) {
@@ -56,7 +59,7 @@ export default function AdminUsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, roleFilter, statusFilter, planFilter]);
+    }, [page, search, roleFilter, statusFilter, planFilter, providerFilter]);
 
     useEffect(() => {
         fetchUsers();
@@ -121,6 +124,15 @@ export default function AdminUsersPage() {
                                 <option value="BASIC">Basic</option>
                                 <option value="PRO">Pro</option>
                             </select>
+                            <select
+                                value={providerFilter}
+                                onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }}
+                                className="admin-filter-select"
+                            >
+                                <option value="">All Auth Methods</option>
+                                <option value="PASSWORD_ONLY">Password Only</option>
+                                <option value="GOOGLE">Google</option>
+                            </select>
                         </div>
                     </form>
 
@@ -136,6 +148,7 @@ export default function AdminUsersPage() {
                                     <thead>
                                         <tr>
                                             <th>User</th>
+                                            <th>Auth</th>
                                             <th>Role</th>
                                             <th>Status</th>
                                             <th>Plan</th>
@@ -147,7 +160,7 @@ export default function AdminUsersPage() {
                                     <tbody>
                                         {users.length === 0 ? (
                                             <tr>
-                                                <td colSpan={7} className="admin-table-empty">
+                                                <td colSpan={8} className="admin-table-empty">
                                                     No users found
                                                 </td>
                                             </tr>
@@ -167,6 +180,15 @@ export default function AdminUsersPage() {
                                                                     {user.email}
                                                                 </div>
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div className="admin-auth-badges">
+                                                            {user.authProviders.map((p) => (
+                                                                <Badge key={p} variant="default" className="admin-badge-small">
+                                                                    {p === 'password' ? '🔑' : p === 'google' ? '🔵' : '•'} {p}
+                                                                </Badge>
+                                                            ))}
                                                         </div>
                                                     </td>
                                                     <td>

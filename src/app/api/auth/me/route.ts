@@ -16,6 +16,12 @@ export async function GET() {
             );
         }
 
+        // Fetch additional user data including passwordHash check
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { passwordHash: true },
+        });
+
         const trialStatus = getTrialStatus(user.plan, user.trialEndDate, user.planOverride);
 
         return NextResponse.json(
@@ -33,6 +39,8 @@ export async function GET() {
                     planOverride: user.planOverride,
                     trialEndDate: user.trialEndDate.toISOString(),
                     createdAt: user.createdAt.toISOString(),
+                    // Whether user has a password set (for determining Set vs Change password UI)
+                    hasPassword: !!dbUser?.passwordHash,
                 },
                 trial: {
                     isOnTrial: trialStatus.isOnTrial,

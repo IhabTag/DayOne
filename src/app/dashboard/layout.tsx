@@ -4,6 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { TrialStatusBanner } from '@/components/ui';
+import Footer from '@/components/Footer';
 
 interface User {
     id: string;
@@ -29,6 +30,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -74,6 +76,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </svg>
             ),
         },
+
+    ];
+
+    const userNavItems = [
         {
             name: 'Profile',
             href: '/dashboard/profile',
@@ -124,7 +130,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </button>
 
             {/* Sidebar */}
-            <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
+            <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
                 <div className="dashboard-sidebar-header">
                     <Link href="/" className="dashboard-logo">
                         <svg
@@ -133,29 +139,47 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             xmlns="http://www.w3.org/2000/svg"
                         >
                             <path
-                                d="M12 2L2 7L12 12L22 7L12 2Z"
+                                d="M12 2L4 7v10l8 5 8-5V7l-8-5z"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                             />
                             <path
-                                d="M2 17L12 22L22 17"
+                                d="M12 22V12"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
-                                strokeLinejoin="round"
                             />
                             <path
-                                d="M2 12L12 17L22 12"
+                                d="M12 12L4 7"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
-                                strokeLinejoin="round"
                             />
+                            <path
+                                d="M12 12l8-5"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            />
+                            <circle cx="12" cy="8" r="2" fill="currentColor" />
                         </svg>
-                        <span>SaaS Kit</span>
+                        {!sidebarCollapsed && <span>DayOne</span>}
                     </Link>
+                    <button
+                        className="sidebar-collapse-btn"
+                        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            {sidebarCollapsed ? (
+                                <polyline points="9 18 15 12 9 6" />
+                            ) : (
+                                <polyline points="15 18 9 12 15 6" />
+                            )}
+                        </svg>
+                    </button>
                 </div>
 
                 <nav className="dashboard-nav">
@@ -167,7 +191,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             onClick={() => setSidebarOpen(false)}
                         >
                             <span className="dashboard-nav-icon">{item.icon}</span>
-                            <span>{item.name}</span>
+                            {!sidebarCollapsed && <span>{item.name}</span>}
+                        </Link>
+                    ))}
+
+                    <div className="dashboard-nav-divider" />
+
+                    {userNavItems.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`dashboard-nav-item ${pathname === item.href ? 'active' : ''}`}
+                            onClick={() => setSidebarOpen(false)}
+                        >
+                            <span className="dashboard-nav-icon">{item.icon}</span>
+                            {!sidebarCollapsed && <span>{item.name}</span>}
                         </Link>
                     ))}
 
@@ -184,30 +222,42 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                     </svg>
                                 </span>
-                                <span>Admin Panel</span>
+                                {!sidebarCollapsed && <span>Admin Panel</span>}
                             </Link>
                         </>
                     )}
                 </nav>
 
                 <div className="dashboard-sidebar-footer">
-                    <div className="dashboard-user">
-                        <div className="dashboard-user-avatar">
-                            {user.name?.charAt(0) || user.email.charAt(0)}
-                        </div>
-                        <div className="dashboard-user-info">
-                            <div className="dashboard-user-name">{user.name || 'User'}</div>
-                            <div className="dashboard-user-email">{user.email}</div>
-                        </div>
-                    </div>
-                    <button onClick={handleLogout} className="dashboard-logout">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                            <polyline points="16 17 21 12 16 7" />
-                            <line x1="21" y1="12" x2="9" y2="12" />
-                        </svg>
-                        <span>Sign out</span>
-                    </button>
+                    {!sidebarCollapsed ? (
+                        <>
+                            <div className="dashboard-user">
+                                <div className="dashboard-user-avatar">
+                                    {user.name?.charAt(0) || user.email.charAt(0)}
+                                </div>
+                                <div className="dashboard-user-info">
+                                    <div className="dashboard-user-name">{user.name || 'User'}</div>
+                                    <div className="dashboard-user-email">{user.email}</div>
+                                </div>
+                            </div>
+                            <button onClick={handleLogout} className="dashboard-logout">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                </svg>
+                                <span>Sign out</span>
+                            </button>
+                        </>
+                    ) : (
+                        <button onClick={handleLogout} className="dashboard-logout collapsed" title="Sign out">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             </aside>
 
@@ -221,16 +271,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
             {/* Main content */}
             <main className="dashboard-main">
-                {trialInfo && (
-                    <TrialStatusBanner
-                        isOnTrial={trialInfo.isOnTrial}
-                        isExpired={trialInfo.isExpired}
-                        daysRemaining={trialInfo.daysRemaining}
-                        plan={user.plan}
-                        planOverride={user.planOverride}
-                    />
-                )}
-                {children}
+                <div className="dashboard-main-content">
+                    {trialInfo && (
+                        <TrialStatusBanner
+                            isOnTrial={trialInfo.isOnTrial}
+                            isExpired={trialInfo.isExpired}
+                            daysRemaining={trialInfo.daysRemaining}
+                            plan={user.plan}
+                            planOverride={user.planOverride}
+                        />
+                    )}
+                    {children}
+                </div>
+                <Footer />
             </main>
         </div>
     );

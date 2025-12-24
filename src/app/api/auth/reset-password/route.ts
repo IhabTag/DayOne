@@ -10,6 +10,49 @@ const resetPasswordSchema = z.object({
     password: z.string().min(1, 'Password is required'),
 });
 
+/**
+ * GET - Validate a password reset token
+ */
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const token = searchParams.get('token');
+
+        if (!token) {
+            return NextResponse.json(
+                { valid: false, message: 'Token is required' },
+                { status: 400 }
+            );
+        }
+
+        const resetToken = await prisma.passwordResetToken.findUnique({
+            where: { token },
+        });
+
+        if (!resetToken) {
+            return NextResponse.json(
+                { valid: false, message: 'Invalid token' },
+                { status: 404 }
+            );
+        }
+
+        if (isTokenExpired(resetToken.expiresAt)) {
+            // Clean up expired token
+            await prisma.passwordResetToken.delete({
+                where: { id: resetToken.id },
+            });
+            return NextResponse.json(
+                { valid: false, message: 'Token has expired' },
+                { status: 410 }
+            );
+        }
+
+        return NextResponse.json({ valid: true }, { status: 200 });
+    } catch (error) {
+        return handleApiError(error);
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const { ipAddress, userAgent } = getRequestMetadata(request);

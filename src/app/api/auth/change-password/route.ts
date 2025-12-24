@@ -48,6 +48,13 @@ export async function POST(request: NextRequest) {
             throw new AuthenticationError();
         }
 
+        // OAuth-only users (no password set) cannot change password via this route
+        if (!dbUser.passwordHash) {
+            throw new ValidationError('Cannot change password for accounts without a password. You may have signed up via Google.', {
+                currentPassword: ['No password set for this account'],
+            });
+        }
+
         // Verify current password
         const isValidPassword = await verifyPassword(currentPassword, dbUser.passwordHash);
         if (!isValidPassword) {

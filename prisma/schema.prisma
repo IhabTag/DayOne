@@ -30,6 +30,16 @@ enum Plan {
   PRO
 }
 
+enum RegistrationSource {
+  NORMAL
+  REFERRAL
+}
+
+enum AuthProvider {
+  PASSWORD
+  GOOGLE
+}
+
 // =============================================================================
 // MODELS
 // =============================================================================
@@ -37,7 +47,7 @@ enum Plan {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  passwordHash String?  // Optional for OAuth-only users
   name         String?
   avatar       String?
   timezone     String   @default("UTC")
@@ -47,12 +57,24 @@ model User {
   role          Role       @default(USER)
   status        UserStatus @default(ACTIVE)
 
+  // Onboarding info
+  referralSource      String?  // Where user heard about us
+  referralSourceOther String?  // If referralSource is "other"
+  jobFunction         String?  // User's job function
+  jobFunctionOther    String?  // If jobFunction is "other"
+
   // Plan & Trial
   plan          Plan      @default(PRO)
   trialStartDate DateTime @default(now())
   trialEndDate   DateTime
   planOverride   Boolean   @default(false) // If true, plan won't auto-downgrade
   planChangedAt  DateTime?
+
+  // Referral tracking
+  referrerId         String?
+  referrer           ReferralLink?       @relation("ReferredBy", fields: [referrerId], references: [id], onDelete: SetNull)
+  registrationSource RegistrationSource  @default(NORMAL)
+  trialDaysGranted   Int?                // Snapshot of trial days at signup
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -63,11 +85,14 @@ model User {
   passwordResetTokens PasswordResetToken[]
   emailChangeTokens   EmailChangeToken[]
   auditLogs           AuditLog[]
+  createdReferralLinks ReferralLink[]     @relation("ReferralLinksCreated")
+  authProviders        UserAuthProvider[]
 
   @@index([email])
   @@index([role])
   @@index([status])
   @@index([plan])
+  @@index([referrerId])
 }
 
 model Session {
@@ -153,4 +178,37 @@ model RateLimitEntry {
 
   @@unique([identifier, action])
   @@index([expiresAt])
+}
+
+model ReferralLink {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  displayName     String?
+  trialDays       Int
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+  createdByUser   User?    @relation("ReferralLinksCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  // Users who registered via this link
+  referredUsers   User[]   @relation("ReferredBy")
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model UserAuthProvider {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       AuthProvider
+  providerUserId String       // e.g., Google 'sub' claim
+  createdAt      DateTime     @default(now())
+
+  // Each provider can only be linked once globally
+  @@unique([provider, providerUserId])
+  // Each user can only have one link per provider
+  @@unique([userId, provider])
+  @@index([userId])
 }

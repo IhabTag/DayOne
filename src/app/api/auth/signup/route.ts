@@ -15,12 +15,31 @@ import { sendEmail, verifyEmailTemplate } from '@/lib/email';
 import { createAuditLog, AuditActions, handleApiError, RateLimitError, ValidationError } from '@/lib/observability';
 import { calculateTrialEndDate } from '@/lib/plans';
 import { getRequestMetadata } from '@/lib/utils';
+import { addDays } from 'date-fns';
+import { RegistrationSource } from '@/generated/prisma';
+
+const VALID_REFERRAL_SOURCES = ['linkedin', 'facebook', 'twitter', 'youtube', 'google', 'friend', 'other'] as const;
+const VALID_JOB_FUNCTIONS = ['product_management', 'software_engineering', 'ai_engineering', 'executive', 'other'] as const;
 
 const signupSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(1, 'Password is required'),
     name: z.string().optional(),
-});
+    referralSource: z.enum(VALID_REFERRAL_SOURCES, {
+        message: 'Please select where you heard about us',
+    }),
+    referralSourceOther: z.string().optional(),
+    jobFunction: z.enum(VALID_JOB_FUNCTIONS, {
+        message: 'Please select your job function',
+    }),
+    jobFunctionOther: z.string().optional(),
+}).refine(
+    (data) => data.referralSource !== 'other' || (data.referralSourceOther && data.referralSourceOther.trim().length > 0),
+    { message: 'Please specify where you heard about us', path: ['referralSourceOther'] }
+).refine(
+    (data) => data.jobFunction !== 'other' || (data.jobFunctionOther && data.jobFunctionOther.trim().length > 0),
+    { message: 'Please specify your job function', path: ['jobFunctionOther'] }
+);
 
 export async function POST(request: NextRequest) {
     try {
@@ -43,7 +62,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const { email, password, name } = result.data;
+        const { email, password, name, referralSource, referralSourceOther, jobFunction, jobFunctionOther } = result.data;
 
         // Validate password strength
         const passwordValidation = validatePasswordStrength(password);
@@ -73,8 +92,38 @@ export async function POST(request: NextRequest) {
         // Hash password
         const passwordHash = await hashPassword(password);
 
-        // Calculate trial end date (14 days from now)
-        const trialEndDate = calculateTrialEndDate();
+        // Check for referral cookie (ap_ref contains referral link ID)
+        const referralCookie = request.cookies.get('ap_ref')?.value;
+        let referralLink = null;
+
+        if (referralCookie) {
+            // Validate the referral link exists and is active
+            referralLink = await prisma.referralLink.findUnique({
+                where: { id: referralCookie },
+                select: {
+                    id: true,
+                    trialDays: true,
+                    isActive: true,
+                    slug: true,
+                },
+            });
+
+            // Only use if active
+            if (referralLink && !referralLink.isActive) {
+                referralLink = null;
+            }
+        }
+
+        // Calculate trial end date based on referral or default
+        let trialEndDate: Date;
+        let trialDaysGranted: number | null = null;
+
+        if (referralLink) {
+            trialDaysGranted = referralLink.trialDays;
+            trialEndDate = addDays(new Date(), referralLink.trialDays);
+        } else {
+            trialEndDate = calculateTrialEndDate();
+        }
 
         // Create user
         const user = await prisma.user.create({
@@ -83,6 +132,14 @@ export async function POST(request: NextRequest) {
                 passwordHash,
                 name: name || null,
                 trialEndDate,
+                referralSource,
+                referralSourceOther: referralSource === 'other' ? referralSourceOther : null,
+                jobFunction,
+                jobFunctionOther: jobFunction === 'other' ? jobFunctionOther : null,
+                // Referral attribution
+                referrerId: referralLink?.id || null,
+                registrationSource: referralLink ? RegistrationSource.REFERRAL : RegistrationSource.NORMAL,
+                trialDaysGranted,
             },
         });
 
@@ -133,7 +190,7 @@ export async function POST(request: NextRequest) {
         // Increment rate limit
         await incrementRateLimit(identifier, 'signup');
 
-        return NextResponse.json(
+        const response = NextResponse.json(
             {
                 message: 'Account created! Please check your email to verify your account.',
                 user: {
@@ -148,6 +205,13 @@ export async function POST(request: NextRequest) {
                 headers: getRateLimitHeaders(rateLimitResult),
             }
         );
+
+        // Clear the referral cookie after successful signup
+        if (referralCookie) {
+            response.cookies.delete('ap_ref');
+        }
+
+        return response;
     } catch (error) {
         return handleApiError(error);
     }

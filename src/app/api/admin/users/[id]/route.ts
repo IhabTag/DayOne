@@ -29,6 +29,16 @@ export async function GET(
                 trialEndDate: true,
                 emailVerified: true,
                 createdAt: true,
+                // Referral tracking
+                registrationSource: true,
+                trialDaysGranted: true,
+                referrer: {
+                    select: {
+                        id: true,
+                        slug: true,
+                        displayName: true,
+                    },
+                },
             },
         });
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, PlanStatusCard, Badge, FeatureLimitDisplay } from '@/components/ui';
+import Link from 'next/link';
+import { Card, CardHeader, CardTitle, CardContent, PlanStatusCard, Badge } from '@/components/ui';
 
 interface User {
     id: string;
@@ -50,22 +51,11 @@ export default function DashboardPage() {
         );
     }
 
-    // Mock usage data - in a real app, this would come from the API
-    const usageData = {
-        projects: 2,
-        teamMembers: 1,
-        storage: 0.3, // GB
-    };
-
-    const limits = user.plan === 'PRO'
-        ? { projects: Infinity, teamMembers: 10, storage: 100 }
-        : { projects: 3, teamMembers: 1, storage: 1 };
-
     return (
         <div className="dashboard-page">
             <header className="dashboard-header">
                 <h1>Welcome back{user.name ? `, ${user.name.split(' ')[0]}` : ''}!</h1>
-                <p>Here&apos;s an overview of your account.</p>
+                <p>Here&apos;s an overview of your DayOne account.</p>
             </header>
 
             <div className="dashboard-grid">
@@ -82,7 +72,7 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                {/* Quick Stats */}
+                {/* Account Status */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Account Status</CardTitle>
@@ -115,30 +105,49 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* Usage */}
+                {/* Getting Started */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Usage</CardTitle>
+                        <CardTitle>Getting Started</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <FeatureLimitDisplay
-                            current={usageData.projects}
-                            limit={limits.projects}
-                            label="Projects"
-                            plan={user.plan}
-                        />
-                        <FeatureLimitDisplay
-                            current={usageData.teamMembers}
-                            limit={limits.teamMembers}
-                            label="Team Members"
-                            plan={user.plan}
-                        />
-                        <FeatureLimitDisplay
-                            current={usageData.storage}
-                            limit={limits.storage}
-                            label="Storage (GB)"
-                            plan={user.plan}
-                        />
+                        <div className="dashboard-getting-started">
+                            <p className="dashboard-getting-started-intro">
+                                Welcome to DayOne! This starter kit includes everything you need to build your SaaS.
+                            </p>
+                            <ul className="dashboard-checklist">
+                                <li className="dashboard-checklist-item completed">
+                                    <svg className="checklist-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>Authentication with Google OAuth</span>
+                                </li>
+                                <li className="dashboard-checklist-item completed">
+                                    <svg className="checklist-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>Subscription & trial system active</span>
+                                </li>
+                                <li className="dashboard-checklist-item completed">
+                                    <svg className="checklist-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>Role-based access control enabled</span>
+                                </li>
+                                <li className="dashboard-checklist-item completed">
+                                    <svg className="checklist-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>PostHog analytics ready</span>
+                                </li>
+                                <li className="dashboard-checklist-item">
+                                    <svg className="checklist-icon" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="10" cy="10" r="7" />
+                                    </svg>
+                                    <span>Add your first feature</span>
+                                </li>
+                            </ul>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -149,27 +158,27 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="dashboard-actions">
-                            <a href="/dashboard/profile" className="dashboard-action">
+                            <Link href="/dashboard/profile" className="dashboard-action">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                     <circle cx="12" cy="7" r="4" />
                                 </svg>
                                 <span>Edit Profile</span>
-                            </a>
-                            <a href="/dashboard/settings" className="dashboard-action">
+                            </Link>
+                            <Link href="/dashboard/settings" className="dashboard-action">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <circle cx="12" cy="12" r="3" />
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                                 </svg>
                                 <span>Settings</span>
-                            </a>
+                            </Link>
                             {user.plan === 'BASIC' && (
-                                <a href="/pricing" className="dashboard-action upgrade">
+                                <Link href="/pricing" className="dashboard-action upgrade">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                                     </svg>
                                     <span>Upgrade to Pro</span>
-                                </a>
+                                </Link>
                             )}
                         </div>
                     </CardContent>

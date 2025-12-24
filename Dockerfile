@@ -13,6 +13,14 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Build arguments for NEXT_PUBLIC_* environment variables
+# These are baked into the bundle at build time
+ARG NEXT_PUBLIC_POSTHOG_KEY
+ARG NEXT_PUBLIC_POSTHOG_HOST
+
+ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
+ENV NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST
+
 # Build the application
 RUN npm run build
 

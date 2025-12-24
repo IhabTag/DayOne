@@ -51,6 +51,19 @@ export function middleware(request: NextRequest) {
         pathname.startsWith(pattern)
     );
 
+    // Check if this could be a referrer slug route (single path segment, not a known route)
+    // These are handled by the [referrerSlug] dynamic route
+    const isKnownRoute = isPublicRoute || isProtectedRoute || isAdminRoute ||
+        pathname.startsWith('/api/') ||
+        pathname.startsWith('/_next/');
+    const isPotentialReferrerSlug = !isKnownRoute &&
+        pathname.match(/^\/[a-zA-Z0-9_-]+$/);
+
+    // Referrer slug routes are public (the route handler will validate them)
+    if (isPotentialReferrerSlug) {
+        return NextResponse.next();
+    }
+
     // If no session and trying to access protected/admin route
     if (!sessionToken && (isProtectedRoute || isAdminRoute)) {
         // For API routes, return 401

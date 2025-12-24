@@ -1,47 +1,49 @@
 import Link from 'next/link';
+import PublicHeader from '@/components/PublicHeader';
+import Footer from '@/components/Footer';
 
 const plans = [
     {
-        name: 'Basic',
+        name: 'Starter',
         price: 'Free',
-        description: 'Perfect for getting started',
+        description: 'Try before you buy',
         features: [
-            '3 Projects',
-            '1 Team member',
-            '1 GB Storage',
+            '14-day Pro trial included',
+            'Full source code access',
             'Community support',
         ],
         notIncluded: [
-            'Advanced Analytics',
-            'Priority Support',
-            'Data Export',
-            'API Access',
-            'Custom Branding',
+            'Priority support',
+            'Future updates',
+            'Commercial license',
         ],
-        cta: 'Get started',
+        cta: 'Start free trial',
         ctaLink: '/auth/signup',
         highlighted: false,
     },
     {
         name: 'Pro',
-        price: '$29',
-        period: '/month',
-        description: 'For growing teams and businesses',
+        price: '$49',
+        period: 'one-time',
+        description: 'Everything you need to launch',
         features: [
-            'Unlimited Projects',
-            'Up to 10 Team members',
-            '100 GB Storage',
-            'Advanced Analytics',
-            'Priority Support',
-            'Data Export',
-            'API Access',
-            'Custom Branding',
+            'Full source code',
+            'Authentication & RBAC',
+            'Google OAuth integration',
+            'Subscription system',
+            'Advanced referral system',
+            'Admin dashboard',
+            'PostHog analytics',
+            'Email integration',
+            'Docker ready',
+            'Lifetime updates',
+            'Commercial license',
         ],
         notIncluded: [],
-        cta: 'Start 14-day trial',
+        cta: 'Get DayOne Pro',
         ctaLink: '/auth/signup',
         highlighted: true,
-        badge: 'Most Popular',
+        badge: 'Best Value',
     },
 ];
 
@@ -49,52 +51,7 @@ export default function PricingPage() {
     return (
         <div className="pricing-page">
             {/* Navigation */}
-            <nav className="landing-nav">
-                <div className="landing-nav-container">
-                    <Link href="/" className="landing-logo">
-                        <svg
-                            className="landing-logo-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path
-                                d="M12 2L2 7L12 12L22 7L12 2Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <path
-                                d="M2 17L12 22L22 17"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <path
-                                d="M2 12L12 17L22 12"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                        <span>SaaS Kit</span>
-                    </Link>
-                    <div className="landing-nav-links">
-                        <Link href="/pricing" className="landing-nav-link active">
-                            Pricing
-                        </Link>
-                        <Link href="/auth/login" className="landing-nav-link">
-                            Log in
-                        </Link>
-                        <Link href="/auth/signup" className="landing-nav-cta">
-                            Start free trial
-                        </Link>
-                    </div>
-                </div>
-            </nav>
+            <PublicHeader />
 
             {/* Pricing Header */}
             <section className="pricing-header">
@@ -164,39 +121,35 @@ export default function PricingPage() {
                         <h3>What happens after the trial?</h3>
                         <p>
                             After your 14-day Pro trial ends, you&apos;ll be automatically downgraded
-                            to the Basic plan. No charges, no surprises.
+                            to the free tier with limited features. Upgrade anytime to keep full access.
                         </p>
                     </div>
                     <div className="pricing-faq-item">
-                        <h3>Can I upgrade or downgrade anytime?</h3>
+                        <h3>Can I use this for commercial projects?</h3>
                         <p>
-                            Yes! You can upgrade to Pro or downgrade to Basic at any time from
-                            your account settings.
+                            Yes! The Pro license includes commercial use rights. Build and sell
+                            as many SaaS products as you want.
                         </p>
                     </div>
                     <div className="pricing-faq-item">
-                        <h3>Is there a refund policy?</h3>
+                        <h3>How does AI-assisted coding work?</h3>
                         <p>
-                            We offer a 30-day money-back guarantee. If you&apos;re not satisfied,
-                            contact us for a full refund.
+                            DayOne&apos;s clean codebase is optimized for AI coding assistants like Cursor
+                            and Claude. Just describe what you want to build and let AI handle the implementation.
                         </p>
                     </div>
                     <div className="pricing-faq-item">
-                        <h3>Do you offer team or enterprise plans?</h3>
+                        <h3>What tech stack is included?</h3>
                         <p>
-                            Yes! Contact us for custom enterprise pricing with additional features
-                            and support.
+                            Next.js 15, PostgreSQL with Prisma, TypeScript, and Docker.
+                            Everything you need for a production SaaS.
                         </p>
                     </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="landing-footer">
-                <div className="landing-footer-content">
-                    <p>&copy; {new Date().getFullYear()} SaaS Kit. All rights reserved.</p>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }

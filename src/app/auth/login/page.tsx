@@ -1,20 +1,34 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Alert } from '@/components/ui';
+import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Alert, GoogleButton } from '@/components/ui';
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get('redirect') || '/dashboard';
+    const oauthError = searchParams.get('error');
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(oauthError || '');
     const [needsVerification, setNeedsVerification] = useState(false);
+    const [googleOAuthEnabled, setGoogleOAuthEnabled] = useState(false);
+
+    // Fetch auth configuration on mount
+    useEffect(() => {
+        fetch('/api/auth/config')
+            .then(res => res.json())
+            .then(data => {
+                setGoogleOAuthEnabled(data.googleOAuthEnabled);
+            })
+            .catch(() => {
+                // Silently fail - Google OAuth just won't be shown
+            });
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -95,6 +109,17 @@ function LoginForm() {
                         )}
                     </Alert>
                 )}
+
+                {/* Google OAuth Button - only shown when enabled */}
+                {googleOAuthEnabled && (
+                    <>
+                        <GoogleButton disabled={loading} />
+                        <div className="auth-divider">
+                            <span>or continue with email</span>
+                        </div>
+                    </>
+                )}
+
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">
                         <label htmlFor="email" className="form-label">

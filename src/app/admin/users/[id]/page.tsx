@@ -15,6 +15,14 @@ interface User {
     emailVerified: string | null;
     trialEndDate: string;
     createdAt: string;
+    // Referral tracking
+    registrationSource: 'NORMAL' | 'REFERRAL';
+    trialDaysGranted: number | null;
+    referrer: {
+        id: string;
+        slug: string;
+        displayName: string | null;
+    } | null;
 }
 
 interface AuditLog {
@@ -272,6 +280,44 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Referral Info */}
+                {user.registrationSource === 'REFERRAL' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Referral Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="admin-detail-info">
+                                <div className="admin-detail-row">
+                                    <span>Registration Source</span>
+                                    <Badge variant="info">Referral</Badge>
+                                </div>
+                                {user.referrer && (
+                                    <div className="admin-detail-row">
+                                        <span>Referral Link</span>
+                                        <a
+                                            href={`/admin/referral-links`}
+                                            className="admin-action-link"
+                                        >
+                                            {user.referrer.displayName || user.referrer.slug}
+                                        </a>
+                                    </div>
+                                )}
+                                {user.trialDaysGranted && (
+                                    <div className="admin-detail-row">
+                                        <span>Trial Days Granted</span>
+                                        <span><strong>{user.trialDaysGranted}</strong> days</span>
+                                    </div>
+                                )}
+                                <div className="admin-detail-row">
+                                    <span>Trial End Date</span>
+                                    <span>{new Date(user.trialEndDate).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Audit Log */}
                 <Card className="admin-card-full">

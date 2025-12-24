@@ -1,17 +1,23 @@
-# SaaS Starter Kit
+# DayOne - SaaS Starter Kit
 <img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/9688754c-a77f-4b02-a507-6275fc58791a" />
 
-A production-ready SaaS web application starter built with Next.js 15, featuring secure authentication, role-based access control, subscription management with reverse trial, and a comprehensive admin dashboard.
+A production-ready SaaS web application starter built with Next.js 15, featuring secure authentication (Password + Google OAuth), role-based access control, subscription management with reverse trial, referral system, and a comprehensive admin dashboard.
 
 ## Features
 
-### 🔐 Authentication
-- Email/password authentication with bcrypt hashing
-- Email verification with expiring tokens
-- Password reset with secure tokens
-- Change email with confirmation flow
-- Rate limiting and brute-force protection
-- Session management with secure HTTP-only cookies
+### 🔐 Authentication & Onboarding
+- **Dual Auth Strategies**:
+  - Email/password authentication with bcrypt hashing
+  - Google OAuth 2.0 integration
+- **Secure Flows**:
+  - Email verification with expiring tokens
+  - Password reset with secure tokens
+  - Change email with confirmation flow
+  - Rate limiting and brute-force protection
+  - Session management with secure HTTP-only cookies
+- **Onboarding Experience**:
+  - Collection of user details (Job Function, Referral Source)
+  - Seamless referral tracking
 
 ### 👥 Role-Based Access Control (RBAC)
 - **Guest**: Public pages only
@@ -25,13 +31,18 @@ A production-ready SaaS web application starter built with Next.js 15, featuring
 - Feature gating based on plan
 - Usage limits per plan
 
+### 🔗 Referral System
+- Unique referral links for every user
+- "Sticky" cookies to track referrals across sessions
+- Admin dashboard for tracking referral performance
+- Automated attribution upon signup
+
 ### 🎛️ Superadmin Dashboard
-- User management with search, filter, and sort
-- User detail view with role/status/plan controls
-- Trial extension capabilities
-- Per-user audit log timeline
-- Global audit logs with filtering
-- System health monitoring
+- **User Management**: Search, filter, and sort users
+- **User Details**: Role/status/plan controls and audit timelines
+- **Referral Management**: Track global referral stats
+- **System Health**: Monitoring and observability features
+- **Global Audit Logs**: Comprehensive system-wide activity log
 
 ### 📧 Email System
 - SMTP integration with Nodemailer
@@ -42,15 +53,18 @@ A production-ready SaaS web application starter built with Next.js 15, featuring
 - Structured audit logging
 - Centralized error handling
 - Request logging middleware
+- PostHog Analytics integration ready
 
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
 - **Styling**: Tailwind CSS 4
-- **Auth**: Custom implementation (no third-party deps)
+- **Auth**: Custom implementation + Google OAuth 2.0
 - **Email**: Nodemailer
 - **Validation**: Zod
+- **Analytics**: PostHog
 
 ## Getting Started
 
@@ -81,6 +95,7 @@ A production-ready SaaS web application starter built with Next.js 15, featuring
    Edit `.env` with your configuration:
    - `DATABASE_URL`: PostgreSQL connection string
    - `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`: Initial admin credentials
+   - `GOOGLE_...`: Google OAuth credentials (optional)
    - SMTP settings for email
 
 4. **Set up the database**
@@ -102,23 +117,48 @@ A production-ready SaaS web application starter built with Next.js 15, featuring
 
 6. Open [http://localhost:3000](http://localhost:3000)
 
-### Using Docker
+### Using Docker for Local Development
 
-A Docker Compose setup is provided for local development:
+To run the required services (PostgreSQL and MailHog) locally without installing them directly on your machine, use the local Docker Compose file:
 
-```bash
-# Start PostgreSQL and MailHog
-docker-compose up -d
+1. **Start Local Services**
+   ```bash
+   # Starts PostgreSQL and MailHog
+   docker-compose -f docker-compose-local.yml up -d
+   ```
 
-# The database will be available at localhost:5432
-# MailHog UI will be available at http://localhost:8025
-```
+2. **Access Services**
+   - **Database**: `localhost:5432`
+   - **MailHog (Email Testing)**: [http://localhost:8025](http://localhost:8025) - View all emails sent by the app here.
+
+3. **Run the App**
+   ```bash
+   npm run dev
+   ```
+
+> **Note**: The standard `docker-compose.yml` file is intended for **production deployment**, which builds and runs the entire application container. For local development, always use `docker-compose-local.yml`.
+
+## 🚀 Build in 48 Hours with AI
+
+This starter kit is architected to be the perfect foundation for AI Agentic IDEs (like **Google's Antigravity**, Cursor, or Windsurf).
+
+**Why this kit + AI = Speed:**
+- **Standardized Patterns**: The code follows strict, predictable patterns that AI models understand easily.
+- **Type Safety**: Full TypeScript support helps AI avoid hallucinations and syntax errors.
+- **Modular Structure**: AI can easily locate and modify specific components (auth, payments, UI) without breaking the whole system.
+
+**Suggested Workflow:**
+1. **Load the Context**: Open this project in your AI IDE.
+2. **Prompt with Intent**: "Create a new 'Projects' page with a list view and a 'Create' modal using the existing UI components."
+3. **Iterate**: The AI will leverage the existing `src/components/ui` and database schema to build features 10x faster.
+4. **Deploy**: Ship your MVP in record time.
 
 ## Project Structure
 
 ```
 src/
 ├── app/
+│   ├── [referrerSlug]/     # Dynamic referral link handling
 │   ├── admin/              # Superadmin dashboard pages
 │   │   ├── audit-logs/     # Global audit logs
 │   │   ├── health/         # System health
@@ -133,12 +173,12 @@ src/
 ├── components/
 │   └── ui/                 # Reusable UI components
 ├── lib/
-│   ├── auth/               # Authentication logic
+│   ├── auth/               # Auth logic (Google, Password, Session)
 │   ├── email/              # Email system
 │   ├── observability/      # Logging and error handling
 │   ├── plans/              # Subscription logic
 │   └── rbac/               # Role-based access control
-└── middleware.ts           # Route protection
+└── middleware.ts           # Route protection & Referral tracking
 ```
 
 ## Available Scripts
@@ -160,81 +200,30 @@ src/
 
 See `.env.example` for all available configuration options.
 
-### Required Variables
+### Key Variables
 
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `APP_URL` | Application URL |
+| `APP_URL` | Application URL (e.g., http://localhost:3000) |
 | `SESSION_SECRET` | Secret for session encryption |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
 | `SMTP_HOST` | SMTP server host |
-| `SMTP_PORT` | SMTP server port |
-| `SMTP_FROM` | From email address |
-
-### Optional Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SUPERADMIN_EMAIL` | - | Initial superadmin email |
-| `SUPERADMIN_PASSWORD` | - | Initial superadmin password |
-| `TRIAL_DURATION_DAYS` | 14 | Trial period length |
-| `SESSION_EXPIRY_HOURS` | 24 | Session duration |
-| `SEED_DEMO_USERS` | false | Create demo users in dev |
 
 ## API Routes
 
 ### Authentication
 - `POST /api/auth/signup` - Register new user
 - `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/me` - Get current user
-- `PATCH /api/auth/me` - Update profile
-- `POST /api/auth/verify-email` - Verify email token
-- `POST /api/auth/resend-verification` - Resend verification
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
-- `POST /api/auth/change-password` - Change password
-- `POST /api/auth/change-email` - Request email change
-- `POST /api/auth/confirm-email-change` - Confirm email change
+- `GET /api/auth/google` - Initiate Google Login
+- `GET /api/auth/google/callback` - Google Login Callback
+- ... plus password reset, email verification, etc.
 
 ### Admin
 - `GET /api/admin/stats` - Dashboard statistics
 - `GET /api/admin/users` - List users
-- `GET /api/admin/users/[id]` - Get user details
-- `PATCH /api/admin/users/[id]` - Update user
-- `GET /api/admin/users/[id]/audit-logs` - User audit logs
-- `GET /api/admin/audit-logs` - Global audit logs
-- `GET /api/admin/health` - System health
-
-### Cron
-- `GET /api/cron/process-trials` - Process expired trials
-
-## Plan Features
-
-### Basic Plan
-- 3 Projects
-- 1 Team member
-- 1 GB Storage
-
-### Pro Plan
-- Unlimited Projects
-- Up to 10 Team members
-- 100 GB Storage
-- Advanced Analytics
-- Priority Support
-- Data Export
-- API Access
-- Custom Branding
-
-## Security Features
-
-- Password hashing with bcrypt
-- Secure session cookies (HTTP-only, SameSite)
-- CSRF protection
-- Rate limiting on sensitive endpoints
-- Brute-force protection
-- Token expiration
-- Audit logging
+- ... plus user management, audit logs, health check
 
 ## Contributing
 

@@ -1,46 +1,97 @@
+# =============================================================================
+# PRODUCTION DOCKER COMPOSE
+# =============================================================================
+# Usage: docker-compose -f docker-compose-prod.yml up -d
+#
+# Before running:
+# 1. Copy .env.prod.example to .env and configure for production
+# 2. Set strong passwords and secrets
+# 3. Configure real SMTP settings
+# 4. Set NODE_ENV=production
+# =============================================================================
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* vars must be passed at build time for Next.js
+        - NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
+        - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
     ports:
       - "3000:3000"
     env_file:
       - .env
     environment:
-      # Override database URL to use Docker service name
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/saas_db
-      # Override SMTP host to use Docker service name  
-      - SMTP_HOST=mailhog
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
-      mailhog:
-        condition: service_started
 
   db:
     image: postgres:15-alpine
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
     environment:
-      - POSTGRES_DB=saas_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB=${POSTGRES_DB:-aipapers}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    # Do NOT expose database port externally in production
+    # Uncomment below only for debugging
+    # ports:
+    #   - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d saas_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-aipapers}" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  mailhog:
-    image: mailhog/mailhog
-    restart: unless-stopped
-    ports:
-      - "1025:1025" # SMTP server
-      - "8025:8025" # Web UI
-
 volumes:
   postgres_data:
+    driver: local
+
+# =============================================================================
+# PRODUCTION NOTES:
+# =============================================================================
+#
+# 1. DATABASE SECURITY:
+#    - Database port is NOT exposed externally
+#    - Use strong password in POSTGRES_PASSWORD
+#    - Consider using Docker secrets for sensitive data
+#
+# 2. SMTP:
+#    - MailHog is NOT included (development only)
+#    - Configure real SMTP in .env.prod (SendGrid, AWS SES, etc.)
+#
+# 3. REVERSE PROXY:
+#    - Use Nginx/Traefik in front of the app
+#    - Configure SSL/TLS termination
+#    - Example Nginx config:
+#      location / {
+#        proxy_pass http://localhost:3000;
+#        proxy_http_version 1.1;
+#        proxy_set_header Upgrade $http_upgrade;
+#        proxy_set_header Connection 'upgrade';
+#        proxy_set_header Host $host;
+#        proxy_cache_bypass $http_upgrade;
+#      }
+#
+# 4. BACKUPS:
+#    - Set up regular PostgreSQL backups
+#    - Example: docker exec db pg_dump -U postgres aipapers > backup.sql
+#
+# 5. MONITORING:
+#    - PostHog is configured for analytics
+#    - Consider adding Prometheus/Grafana for infrastructure monitoring
+#
+# 6. SCALING:
+#    - For horizontal scaling, add a load balancer
+#    - Use external managed database (RDS, Cloud SQL)
+#    - Use Redis for session storage
+# =============================================================================

@@ -141,4 +141,17 @@ export const AuditActions = {
 
     // Auto actions
     USER_PLAN_AUTO_DOWNGRADED: 'user.plan.auto_downgraded',
+
+    // Referral Links
+    REFERRAL_LINK_CREATED: 'referral_link.created',
+    REFERRAL_LINK_UPDATED: 'referral_link.updated',
+    REFERRAL_LINK_ENABLED: 'referral_link.enabled',
+    REFERRAL_LINK_DISABLED: 'referral_link.disabled',
+
+    // OAuth
+    USER_OAUTH_LOGIN: 'user.oauth.login',
+    USER_OAUTH_SIGNUP: 'user.oauth.signup',
+    USER_OAUTH_LINKED: 'user.oauth.linked',
+    USER_OAUTH_LOGIN_BLOCKED: 'user.oauth.login_blocked',
 } as const;
+

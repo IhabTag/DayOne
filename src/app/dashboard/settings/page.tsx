@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Alert } from '@/components/ui';
 
 interface User {
@@ -9,9 +10,11 @@ interface User {
     email: string;
     plan: 'BASIC' | 'PRO';
     emailVerified: string | null;
+    hasPassword: boolean;
 }
 
 export default function SettingsPage() {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
 
     // Change Password State
@@ -29,6 +32,10 @@ export default function SettingsPage() {
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailSuccess, setEmailSuccess] = useState(false);
     const [emailError, setEmailError] = useState('');
+
+    // Delete Account State
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -73,20 +80,23 @@ export default function SettingsPage() {
             return;
         }
 
+        // Use different endpoint based on whether user has a password
+        const endpoint = user?.hasPassword ? '/api/auth/change-password' : '/api/auth/set-password';
+        const payload = user?.hasPassword
+            ? { currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword }
+            : { newPassword: passwordData.newPassword };
+
         try {
-            const response = await fetch('/api/auth/change-password', {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    currentPassword: passwordData.currentPassword,
-                    newPassword: passwordData.newPassword,
-                }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to change password');
+                throw new Error(data.message || 'Failed to update password');
             }
 
             setPasswordSuccess(true);
@@ -95,6 +105,12 @@ export default function SettingsPage() {
                 newPassword: '',
                 confirmPassword: '',
             });
+            // Refresh user data to update hasPassword
+            const meResponse = await fetch('/api/auth/me');
+            if (meResponse.ok) {
+                const meData = await meResponse.json();
+                setUser(meData.user);
+            }
         } catch (err) {
             setPasswordError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -139,6 +155,39 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        setDeleteError('');
+
+        if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+            return;
+        }
+
+        if (!window.confirm('Please confirm one last time: Do you really want to delete your account and all associated data?')) {
+            return;
+        }
+
+        setDeleteLoading(true);
+
+        try {
+            const response = await fetch('/api/auth/delete-account', {
+                method: 'DELETE',
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to delete account');
+            }
+
+            // Redirect to home page
+            router.push('/');
+            router.refresh();
+        } catch (err) {
+            setDeleteError(err instanceof Error ? err.message : 'An error occurred');
+            setDeleteLoading(false);
+        }
+    };
+
     if (!user) {
         return (
             <div className="dashboard-loading">
@@ -155,18 +204,21 @@ export default function SettingsPage() {
             </header>
 
             <div className="settings-grid">
-                {/* Change Password */}
+                {/* Change/Set Password */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Change Password</CardTitle>
+                        <CardTitle>{user.hasPassword ? 'Change Password' : 'Set Password'}</CardTitle>
                         <CardDescription>
-                            Update your password to keep your account secure
+                            {user.hasPassword
+                                ? 'Update your password to keep your account secure'
+                                : 'Set a password to enable email/password login for your account'
+                            }
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {passwordSuccess && (
                             <Alert variant="success" className="mb-4">
-                                Password changed successfully!
+                                {user.hasPassword ? 'Password changed successfully!' : 'Password set successfully! You can now log in with email and password.'}
                             </Alert>
                         )}
                         {passwordError && (
@@ -174,22 +226,29 @@ export default function SettingsPage() {
                                 {passwordError}
                             </Alert>
                         )}
+                        {!user.hasPassword && (
+                            <Alert variant="info" className="mb-4">
+                                You signed up with Google. Set a password to also log in with email and password.
+                            </Alert>
+                        )}
                         <form onSubmit={handlePasswordSubmit} className="settings-form">
-                            <div className="form-group">
-                                <label htmlFor="currentPassword" className="form-label">
-                                    Current Password
-                                </label>
-                                <Input
-                                    id="currentPassword"
-                                    name="currentPassword"
-                                    type="password"
-                                    value={passwordData.currentPassword}
-                                    onChange={handlePasswordChange}
-                                    placeholder="••••••••"
-                                    required
-                                    disabled={passwordLoading}
-                                />
-                            </div>
+                            {user.hasPassword && (
+                                <div className="form-group">
+                                    <label htmlFor="currentPassword" className="form-label">
+                                        Current Password
+                                    </label>
+                                    <Input
+                                        id="currentPassword"
+                                        name="currentPassword"
+                                        type="password"
+                                        value={passwordData.currentPassword}
+                                        onChange={handlePasswordChange}
+                                        placeholder="••••••••"
+                                        required
+                                        disabled={passwordLoading}
+                                    />
+                                </div>
+                            )}
                             <div className="form-group">
                                 <label htmlFor="newPassword" className="form-label">
                                     New Password
@@ -222,7 +281,7 @@ export default function SettingsPage() {
                                 />
                             </div>
                             <Button type="submit" variant="primary" disabled={passwordLoading}>
-                                {passwordLoading ? 'Updating...' : 'Update Password'}
+                                {passwordLoading ? 'Updating...' : (user.hasPassword ? 'Update Password' : 'Set Password')}
                             </Button>
                         </form>
                     </CardContent>
@@ -298,9 +357,16 @@ export default function SettingsPage() {
                             <div>
                                 <h4>Delete Account</h4>
                                 <p>Permanently delete your account and all associated data.</p>
+                                {deleteError && (
+                                    <p className="text-sm text-red-500 mt-2">{deleteError}</p>
+                                )}
                             </div>
-                            <Button variant="danger">
-                                Delete Account
+                            <Button
+                                variant="danger"
+                                onClick={handleDeleteAccount}
+                                disabled={deleteLoading}
+                            >
+                                {deleteLoading ? 'Deleting...' : 'Delete Account'}
                             </Button>
                         </div>
                     </CardContent>
