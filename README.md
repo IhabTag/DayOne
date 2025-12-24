@@ -1,5 +1,5 @@
 # DayOne - SaaS Starter Kit
-<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/9688754c-a77f-4b02-a507-6275fc58791a" />
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/045f7055-f87c-4cad-8bbe-5136301b057b" />
 
 A production-ready SaaS web application starter built with Next.js 15, featuring secure authentication (Password + Google OAuth), role-based access control, subscription management with reverse trial, referral system, and a comprehensive admin dashboard.
 
